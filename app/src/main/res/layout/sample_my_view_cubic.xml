@@ -15,7 +15,7 @@
         android:text="course"
         android:textColor="@android:color/white"
         android:background="@android:color/black"/>
-    <com.example.jerry.myapplication.CubicDrawView
+    <com.example.jerry.myapplication.views.CubicDrawView
         android:id="@+id/myview"
         android:layout_below="@id/title"
         android:background="#ccc"

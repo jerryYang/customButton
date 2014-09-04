@@ -41,6 +41,18 @@
         android:text="freehand"/>
 
     <Button
+        android:id="@+id/swipe_through"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="swipe through"/>
+
+    <Button
+        android:id="@+id/water_wave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="water wave"/>
+
+    <Button
         android:id="@+id/cubic"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

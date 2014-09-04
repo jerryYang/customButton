@@ -1,4 +1,4 @@
-package com.example.jerry.myapplication;
+package com.example.jerry.myapplication.activities;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -8,20 +8,22 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.example.jerry.myapplication.R;
+import com.example.jerry.myapplication.views.TopBounceView;
 
-public class CubicDrawActivity extends Activity implements View.OnTouchListener{
+
+public class TopBounceActivity extends Activity implements View.OnTouchListener{
 
   private float rowX;
   private float rowY;
-  private CubicDrawView myViewSingle;
+  private TopBounceView mSlowSwipeView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.sample_my_view_cubic );
-        myViewSingle = ( CubicDrawView ) findViewById( R.id.myview);
-        View rootView = findViewById( R.id.root );
-      rootView.setOnTouchListener( this );
+        setContentView( R.layout.top_bounce_layout );
+        mSlowSwipeView = ( TopBounceView ) findViewById( R.id.myview);
+        mSlowSwipeView.goBack();
     }
 
 
@@ -54,7 +56,7 @@ public class CubicDrawActivity extends Activity implements View.OnTouchListener{
         rowY = motionEvent.getRawY();
         break;
       case MotionEvent.ACTION_MOVE:
-        myViewSingle.update( motionEvent.getX() - rowX, motionEvent.getRawY() - rowY );
+        mSlowSwipeView.update( motionEvent.getX() - rowX, motionEvent.getRawY() - rowY );
         rowX = motionEvent.getRawX();
         rowY = motionEvent.getRawY();
 
@@ -63,7 +65,7 @@ public class CubicDrawActivity extends Activity implements View.OnTouchListener{
       case MotionEvent.ACTION_UP:
         rowX = 0;
         rowY = 0;
-        myViewSingle.goBack();
+        mSlowSwipeView.goBack();
 
         break;
 

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/holo_blue_bright">
-    <com.example.jerry.myapplication.TopBounceView
+    <com.example.jerry.myapplication.views.TopBounceView
         android:id="@+id/myview"
         android:background="#ccc"
         android:layout_width="match_parent"
