@@ -130,7 +130,7 @@ public class CubicDrawView extends View implements OnTouchListener {
         Path path = new Path();
 
         if(points.size() > 1){
-            for(int i = points.size() - 0; i < points.size(); i++){
+            for(int i = 0; i < points.size(); i++){
                 if(i >= 0){
                     Point point = points.get(i);
 

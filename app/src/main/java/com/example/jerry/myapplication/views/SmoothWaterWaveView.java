@@ -17,7 +17,7 @@ import java.util.TimerTask;
 /**
  * Created by jerry on 9/3/14.
  */
-public class WaterWaveView extends View implements View.OnTouchListener{
+public class SmoothWaterWaveView extends View implements View.OnTouchListener{
   private Spring[] springs;
   private int number = 100;
   private final float k = 0.025f;
@@ -25,8 +25,6 @@ public class WaterWaveView extends View implements View.OnTouchListener{
   private final float targetHeight = 0;
   private final int timeInterval = 20;
   private final float spread = 0.2f;
-
-  private Timer timer;
 
   private int frames = 1500;
 
@@ -38,17 +36,17 @@ public class WaterWaveView extends View implements View.OnTouchListener{
   private float pressedX;
   private float preY;
 
-  public WaterWaveView( Context context ) {
+  public SmoothWaterWaveView( Context context ) {
     super( context );
     init();
   }
 
-  public WaterWaveView( Context context, AttributeSet attrs ) {
+  public SmoothWaterWaveView( Context context, AttributeSet attrs ) {
     super( context, attrs );
     init();
   }
 
-  public WaterWaveView( Context context, AttributeSet attrs, int defStyleAttr ) {
+  public SmoothWaterWaveView( Context context, AttributeSet attrs, int defStyleAttr ) {
     super( context, attrs, defStyleAttr );
     init();
   }
@@ -137,8 +135,6 @@ public class WaterWaveView extends View implements View.OnTouchListener{
     for(int i = 0; i < springs.length; i ++){
       springs[i].reset();
     }
-
-    offset = 0;
   }
 
   public void autoWave(int i, float velocity){
@@ -157,7 +153,7 @@ public class WaterWaveView extends View implements View.OnTouchListener{
   }
 
   public void doWave(){
-    timer = new Timer(  );
+    Timer timer = new Timer(  );
     timer.scheduleAtFixedRate( new TimerTask() {
       int framesConsumed = 0;
       @Override
@@ -217,11 +213,12 @@ public class WaterWaveView extends View implements View.OnTouchListener{
       }
     }
 
+
 //    for(int i = 0; i < springs.length; i ++){
 //      Spring spring = springs[i];
 //      path.lineTo( spring.x + offset, spring.y );
 //    }
-
+//
     path.lineTo( 0, springs[springs.length - 1].y);
     path.lineTo( 0, 0 );
     canvas.drawPath( path, mPaint );
@@ -234,9 +231,6 @@ public class WaterWaveView extends View implements View.OnTouchListener{
 
     switch ( action ){
       case MotionEvent.ACTION_DOWN:
-        if(timer != null){
-          timer.cancel();
-        }
         reset();
         pressedX = motionEvent.getX();
         currentY = motionEvent.getY();
