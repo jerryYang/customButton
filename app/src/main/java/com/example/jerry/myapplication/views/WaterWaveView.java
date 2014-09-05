@@ -19,7 +19,7 @@ import java.util.TimerTask;
  */
 public class WaterWaveView extends View implements View.OnTouchListener{
   private Spring[] springs;
-  private int number = 100;
+  private int number = 80;
   private final float k = 0.025f;
   private final float d = 0.04f;
   private final float targetHeight = 0;
@@ -96,6 +96,10 @@ public class WaterWaveView extends View implements View.OnTouchListener{
 
       this.x += velocity;
       velocity += acceleration;
+//
+//      if(this.x < 0){
+//        this.x = 0;
+//      }
     }
   }
 
@@ -137,8 +141,6 @@ public class WaterWaveView extends View implements View.OnTouchListener{
     for(int i = 0; i < springs.length; i ++){
       springs[i].reset();
     }
-
-    offset = 0;
   }
 
   public void autoWave(int i, float velocity){
@@ -204,6 +206,7 @@ public class WaterWaveView extends View implements View.OnTouchListener{
     }
 
     boolean first = true;
+    offset = 100;
     path.moveTo( 0, 0 );
     for(int i = 0; i < springs.length; i++){
       Spring point = springs[i];
@@ -231,12 +234,13 @@ public class WaterWaveView extends View implements View.OnTouchListener{
   public boolean onTouch( View view, MotionEvent motionEvent ) {
     int action = motionEvent.getAction();
 
-
     switch ( action ){
       case MotionEvent.ACTION_DOWN:
         if(timer != null){
           timer.cancel();
         }
+        offset = 0;
+
         reset();
         pressedX = motionEvent.getX();
         currentY = motionEvent.getY();

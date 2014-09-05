@@ -24,6 +24,7 @@
         <activity android:name=".activities.CubicDrawActivity"/>
         <activity android:name=".activities.SiblingSwipeThroughActivity"/>
         <activity android:name=".activities.WaterWaveActivity"/>
+        <activity android:name=".activities.SmoothWaterWaveActivity"/>
     </application>
 
 </manifest>

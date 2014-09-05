@@ -5,12 +5,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
 import com.example.jerry.myapplication.utils.DeviceUtils;
 
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -26,15 +28,16 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
   private final int timeInterval = 20;
   private final float spread = 0.2f;
 
-  private int frames = 1500;
-
-  private float offset = 0;
-
   private Paint mPaint;
+  private Timer timer;
 
   private float currentY;
   private float pressedX;
-  private float preY;
+
+  private ArrayList<Point> mPoints;
+  private boolean isDrag = true;
+
+  private int screenHeight = 0;
 
   public SmoothWaterWaveView( Context context ) {
     super( context );
@@ -54,7 +57,7 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
   private void init(){
     setOnTouchListener( this );
 
-    int screenHeight = DeviceUtils.getScreenHeight( getContext() );
+    screenHeight = DeviceUtils.getScreenHeight( getContext() );
 
     springs = new Spring[number];
 
@@ -67,6 +70,31 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
     mPaint = new Paint(  );
     mPaint.setColor( Color.BLACK );
     mPaint.setStyle( Paint.Style.FILL );
+
+    initPoints();
+  }
+
+  private void initPoints(){
+    mPoints = new ArrayList<Point>( 3 );
+    Point po0 = new Point();
+    Point po1 = new Point();
+    Point po2 = new Point();
+
+    mPoints.add( po0 );
+    mPoints.add( po1 );
+    mPoints.add( po2 );
+  }
+
+  private void updatePoints(int dx){
+    mPoints.get( 0 ).set( 0, ( int ) (currentY - screenHeight / 8) );
+    mPoints.get( 1 ).set( dx, ( int ) currentY );
+    mPoints.get( 2 ).set( 0, ( int ) (currentY + screenHeight / 8) );
+
+    invalidate();
+  }
+
+  private void clearPoints(){
+    mPoints.clear();
   }
 
   public static class Spring{
@@ -94,6 +122,10 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
 
       this.x += velocity;
       velocity += acceleration;
+
+      if(this.x <= 0){
+        this.x = 0;
+      }
     }
   }
 
@@ -149,17 +181,17 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
     }
 
     update( spread );
-    invalidate();
+   // invalidate();
   }
 
   public void doWave(){
-    Timer timer = new Timer(  );
+    timer = new Timer(  );
     timer.scheduleAtFixedRate( new TimerTask() {
       int framesConsumed = 0;
       @Override
       public void run() {
         framesConsumed ++;
-        offset = offset * (frames - framesConsumed) / frames;
+      //  offset = offset * (frames - framesConsumed) / frames;
 
         update( spread);
         postInvalidate();
@@ -171,6 +203,33 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
   protected void onDraw( Canvas canvas ) {
     super.onDraw( canvas );
 
+    if(isDrag){
+      drawDragWave( canvas );
+    } else {
+      drawWaterWave( canvas );
+    }
+  }
+
+  private void drawDragWave(Canvas canvas){
+    Path path = new Path(  );
+    boolean first = true;
+    for(int i = 0; i < mPoints.size(); i ++){
+      Point point = mPoints.get( i );
+      if(first){
+        path.moveTo( point.x, point.y );
+        first = false;
+      } else {
+        int radius = screenHeight / 8;
+        Point prePoint = mPoints.get( i - 1 );
+        path.cubicTo( prePoint.x, prePoint.y + radius / 3, point.x, point.y - radius / 3, point.x, point.y );
+      }
+    }
+
+    path.lineTo( mPoints.get( 0 ).x, mPoints.get( 0 ).y );
+    canvas.drawPath( path, mPaint );
+  }
+
+  private void drawWaterWave( Canvas canvas){
     Path path = new Path(  );
     path.moveTo( 0,0 );
 
@@ -205,20 +264,14 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
       Spring point = springs[i];
       if(first){
         first = false;
-        path.lineTo(point.x + offset, point.y);
+        path.lineTo(point.x, point.y);
       } else {
         Spring prev = springs[i - 1];
 
-        path.cubicTo(prev.x + prev.dx + offset, prev.y + prev.dy, point.x - point.dx + offset, point.y - point.dy, point.x + offset, point.y);
+        path.cubicTo(prev.x + prev.dx, prev.y + prev.dy, point.x - point.dx, point.y - point.dy, point.x, point.y);
       }
     }
 
-
-//    for(int i = 0; i < springs.length; i ++){
-//      Spring spring = springs[i];
-//      path.lineTo( spring.x + offset, spring.y );
-//    }
-//
     path.lineTo( 0, springs[springs.length - 1].y);
     path.lineTo( 0, 0 );
     canvas.drawPath( path, mPaint );
@@ -227,10 +280,13 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
   @Override
   public boolean onTouch( View view, MotionEvent motionEvent ) {
     int action = motionEvent.getAction();
-
-
     switch ( action ){
       case MotionEvent.ACTION_DOWN:
+        if(timer != null){
+          timer.cancel();
+        }
+
+        isDrag = true;
         reset();
         pressedX = motionEvent.getX();
         currentY = motionEvent.getY();
@@ -238,15 +294,19 @@ public class SmoothWaterWaveView extends View implements View.OnTouchListener{
       case MotionEvent.ACTION_MOVE:
         currentY = motionEvent.getY();
         float dx = motionEvent.getX() - pressedX;
-        offset = dx > 100? (dx - 100) / 8: 0;
 
-        int screenHeight = DeviceUtils.getScreenHeight( getContext() );
-        int pointIndex = ( int ) (currentY * number / screenHeight);
-        splash( pointIndex, dx );
+        updatePoints( ( int ) (dx / 4) );
+
         break;
-
       case MotionEvent.ACTION_UP:
       case MotionEvent.ACTION_CANCEL:
+        updatePoints( 0 );
+        currentY = motionEvent.getY();
+        dx = motionEvent.getX() - pressedX;
+
+        int pointIndex = ( int ) (currentY * number / screenHeight);
+        splash( pointIndex, dx );
+        isDrag = false;
         doWave();
     }
     return true;

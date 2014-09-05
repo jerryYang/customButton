@@ -53,6 +53,12 @@
         android:text="water wave"/>
 
     <Button
+        android:id="@+id/smooth_water_wave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="smooth water wave"/>
+
+    <Button
         android:id="@+id/cubic"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

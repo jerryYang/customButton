@@ -71,6 +71,13 @@ public class MainActivity extends Activity {
           waterWave();
         }
       } );
+
+      findViewById( R.id.smooth_water_wave ).setOnClickListener( new View.OnClickListener() {
+        @Override
+        public void onClick( View view ) {
+          smoothWaterWave();
+        }
+      } );
     }
 
     private void rapidSwipe(){
@@ -110,6 +117,11 @@ public class MainActivity extends Activity {
 
   private void waterWave(){
     Intent intent = new Intent(this, WaterWaveActivity.class);
+    startActivity( intent );
+  }
+
+  private void smoothWaterWave(){
+    Intent intent = new Intent(this, SmoothWaterWaveActivity.class);
     startActivity( intent );
   }
 
