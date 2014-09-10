@@ -25,6 +25,7 @@
         <activity android:name=".activities.SiblingSwipeThroughActivity"/>
         <activity android:name=".activities.WaterWaveActivity"/>
         <activity android:name=".activities.SmoothWaterWaveActivity"/>
+        <activity android:name=".activities.CustomButtonActivity"/>
     </application>
 
 </manifest>

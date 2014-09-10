@@ -44,6 +44,7 @@
         android:id="@+id/swipe_through"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:visibility="gone"
         android:text="swipe through"/>
 
     <Button
@@ -57,6 +58,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="smooth water wave"/>
+
+    <Button
+        android:id="@+id/custom_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="custom button"/>
 
     <Button
         android:id="@+id/cubic"
