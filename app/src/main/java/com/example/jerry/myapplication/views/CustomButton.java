@@ -24,7 +24,9 @@ public class CustomButton extends Button implements View.OnTouchListener{
 
   private int RADIUS = 100;
 
-  private final float ROUND_CURVE_FACTOR_MAX = 0.5f;
+  private float ROUND_CURVE_FACTOR_MAX = 0.6f;
+  private float CP_FACTOR_Y_MAX = 0.4f;
+
   private final float TOP_BOTTOM_CURVE_DEPTH_FACTOR = 0.15f;
   private float TOP_BOTTOM_CURCE_DEPTH;
 
@@ -61,6 +63,7 @@ public class CustomButton extends Button implements View.OnTouchListener{
     mPaint = new Paint(  );
     mPaint.setStyle( Paint.Style.FILL );
     mPaint.setColor( Color.GRAY );
+    mPaint.setAntiAlias( true );
 
     mPoints = new ArrayList<Point>();
     mRoundRadius = mHeight / 2;
@@ -131,7 +134,6 @@ public class CustomButton extends Button implements View.OnTouchListener{
     point9.setXY( mRoundRadius, mHeight);
     point10.setXY( 0, mRoundRadius );
     point11.setXY( mRoundRadius, 0 );
-
   }
 
   private class Point{
@@ -188,17 +190,54 @@ public class CustomButton extends Button implements View.OnTouchListener{
 
   }
 
-  private void updateRoundCurve(boolean left, float factor){
+  private void updateRoundCurve(boolean left, float factorY, float factor){
     if(left){
+      // first update round corner vertical factor
+      Point point9 = mPoints.get( 9 );
+      Point point11 = mPoints.get( 11 );
+
+      point9.setCP( point9.lCPx, point9.lCPy + factorY, point9.rCPx, point9.rCPy - factorY );
+      point11.setCP( point11.lCPx, point11.lCPy + factorY, point11.rCPx, point11.rCPy - factorY);
+
+      // factor on all round corners to do shape change on round corner
       for(int i = 0; i < 3; i++){
         Point point = mPoints.get( mPoints.size() - (i + 1) );
         point.setCP( point.lCPx * factor, point.lCPy * factor, point.rCPx * factor, point.rCPy * factor );
       }
+
+      // update top bottom curve points to make the joint points smooth
+      Point point1 = mPoints.get( 1 );
+      Point point7 = mPoints.get( 7 );
+      point1.setCP( point11.lCPx, point11.lCPy, point11.rCPx, point11.rCPy);
+      point7.setCP( point9.lCPx, point9.lCPy, point9.rCPx, point9.rCPy );
+      Point point0 = mPoints.get( 0 );
+      Point point8 = mPoints.get( 8 );
+      point0.setCP( 0,0,0,0 );
+      point8.setCP( 0,0,0,0 );
+
     } else {
+      // first update round corner vertical factor
+      Point point5 = mPoints.get( 5 );
+      Point point3 = mPoints.get( 3 );
+
+      point5.setCP( point5.lCPx, point5.lCPy - factorY, point5.rCPx, point5.rCPy + factorY );
+      point3.setCP( point3.lCPx, point3.lCPy - factorY, point3.rCPx, point3.rCPy + factorY);
+
+      // factor on all round corners to do shape change on round corner
       for(int i = 3; i < 6; i++){
         Point point = mPoints.get( i );
         point.setCP( point.lCPx * factor, point.lCPy * factor, point.rCPx * factor, point.rCPy * factor );
       }
+
+      // update top bottom curve points to make the joint points smooth
+      Point point1 = mPoints.get( 1 );
+      Point point7 = mPoints.get( 7 );
+      point1.setCP( point3.lCPx, point3.lCPy, point3.rCPx, point3.rCPy);
+      point7.setCP( point5.lCPx, point5.lCPy, point5.rCPx, point5.rCPy );
+      Point point2 = mPoints.get( 2 );
+      Point point6 = mPoints.get( 6 );
+      point2.setCP( 0, 0, 0, 0 );
+      point6.setCP( 0, 0, 0, 0 );
     }
   }
 
@@ -243,9 +282,7 @@ public class CustomButton extends Button implements View.OnTouchListener{
     }
   }
 
-
   private void updateCorner(boolean left, float pressedX){
-    int RADIS_TEMP = RADIUS;
     // any way, update the top bottom curve points
     if(pressedX < mRoundRadius){
       updateTopBottomCurve( mRoundRadius);
@@ -255,22 +292,26 @@ public class CustomButton extends Button implements View.OnTouchListener{
       updateTopBottomCurve( pressedX );
     }
 
-    float downGradeFactor = 0.5f;
+    float downGradeFactor = 0.4f;
 
     if(left){
-      float offsetY = (1 - (pressedX - mRoundRadius) / RADIS_TEMP ) * TOP_BOTTOM_CURCE_DEPTH * 1 / downGradeFactor;
-      if(offsetY > RADIS_TEMP * TOP_BOTTOM_CURVE_DEPTH_FACTOR){
-        offsetY = RADIS_TEMP * TOP_BOTTOM_CURVE_DEPTH_FACTOR;
-        int roundCornerDownGradeWidth = ( int ) (mRoundRadius + RADIS_TEMP - RADIS_TEMP * downGradeFactor);
+      float offsetY = (1 - (pressedX - mRoundRadius) / RADIUS ) * TOP_BOTTOM_CURCE_DEPTH * 1 / downGradeFactor;
+      if(offsetY > RADIUS * TOP_BOTTOM_CURVE_DEPTH_FACTOR){
+        offsetY = RADIUS * TOP_BOTTOM_CURVE_DEPTH_FACTOR;
+        int roundCornerDownGradeWidth = ( int ) (mRoundRadius + RADIUS - RADIUS * downGradeFactor);
         float factor = 1 - (1 - ROUND_CURVE_FACTOR_MAX) * (roundCornerDownGradeWidth - pressedX) / roundCornerDownGradeWidth;
-        updateRoundCurve( true, factor );
-        updateTopBottomCurveCP( true, factor / 20);
+        if(pressedX <= mRoundRadius){
+          float factorY = CP_FACTOR_Y_MAX * (mRoundRadius - pressedX) / mRoundRadius;
+          updateRoundCurve( true, factorY, factor );
+        } else {
+          updateRoundCurve( true, 0, factor );
+        }
       }
       Point point0 = mPoints.get(0);
       point0.setXY( mRoundRadius , point0.y + offsetY);
 
       Point point8 = mPoints.get( 8 );
-      point8.setXY( mRoundRadius, point8. y - offsetY );
+      point8.setXY( mRoundRadius, point8.y - offsetY );
 
       Point point11 = mPoints.get( 11 );
       point11.setXY( point0.x, point0.y );
@@ -284,8 +325,12 @@ public class CustomButton extends Button implements View.OnTouchListener{
         offsetY = TOP_BOTTOM_CURCE_DEPTH;
         int roundCornerDownGradeWidth = ( int ) (mRoundRadius + RADIUS - RADIUS * downGradeFactor);
         float factor = 1 - (1 - ROUND_CURVE_FACTOR_MAX) * (roundCornerDownGradeWidth - (mWidth - pressedX)) / roundCornerDownGradeWidth;
-        updateRoundCurve( false, factor );
-        updateTopBottomCurveCP( false, factor / 20);
+        if(pressedX >= mWidth - mRoundRadius){
+          float factorY = CP_FACTOR_Y_MAX * (pressedX - (mWidth - mRoundRadius)) / mRoundRadius;
+          updateRoundCurve( false, factorY, factor );
+        } else {
+          updateRoundCurve( false, 0, factor );
+        }
       }
 
       Point point2 = mPoints.get(2);
