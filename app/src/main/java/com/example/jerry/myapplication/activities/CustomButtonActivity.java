@@ -14,7 +14,7 @@ public class CustomButtonActivity extends Activity {
       super.onCreate(savedInstanceState);
       setContentView( R.layout.custom_button_layout );
         CustomButton customButton = ( CustomButton ) findViewById( R.id.myview);
-        customButton.setSize( 700, 200 );
+        customButton.setSize( 800, 200 );
         }
 
         }

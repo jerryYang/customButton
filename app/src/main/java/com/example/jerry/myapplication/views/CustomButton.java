@@ -11,6 +11,8 @@ import android.view.View;
 import android.widget.Button;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by jerry on 9/5/14.
@@ -19,12 +21,14 @@ public class CustomButton extends Button implements View.OnTouchListener{
   private int mWidth;
   private int mHeight;
   private int mRoundRadius;
-  private int mTouchX;
 
-  private int RADIUS = 80;
+  private int RADIUS = 100;
 
-  private final float ROUND_CURVE_FACTOR_MAX = 0.6f;
-  private final float TOP_BOTTOM_CURVE_DEPTH_FACTOR = 1 / 6;
+  private final float ROUND_CURVE_FACTOR_MAX = 0.5f;
+  private final float TOP_BOTTOM_CURVE_DEPTH_FACTOR = 0.15f;
+  private float TOP_BOTTOM_CURCE_DEPTH;
+
+  private Timer mTimer;
 
   private ArrayList<Point> mPoints;
 
@@ -56,11 +60,12 @@ public class CustomButton extends Button implements View.OnTouchListener{
 
     mPaint = new Paint(  );
     mPaint.setStyle( Paint.Style.FILL );
-    mPaint.setColor( Color.BLACK );
+    mPaint.setColor( Color.GRAY );
 
     mPoints = new ArrayList<Point>();
     mRoundRadius = mHeight / 2;
-    RADIUS = ( int ) (mRoundRadius * 1.5);
+    setRadius();
+    TOP_BOTTOM_CURCE_DEPTH = RADIUS * TOP_BOTTOM_CURVE_DEPTH_FACTOR;
 
     for(int i = 0; i < 12; i++){
       Point point = new Point(  );
@@ -69,7 +74,16 @@ public class CustomButton extends Button implements View.OnTouchListener{
     resetPoints();
   }
 
+  private void setRadius(){
+    if(mWidth - mHeight > mRoundRadius * 1.5 * 2 ){
+      RADIUS = ( int ) (mRoundRadius * 1.5);
+    } else {
+      RADIUS = (mWidth - mHeight) / 2;
+    }
+  }
+
   private void resetPoints(){
+    setRadius();
     // top touch point curve
     Point point0 = mPoints.get( 0 );
     point0.setCP( -1, 0, 1, 0 );
@@ -114,7 +128,7 @@ public class CustomButton extends Button implements View.OnTouchListener{
     Point point11 = mPoints.get( 11 );
     point11.setCP( -1, 0, 1, 0 );
 
-    point9.setXY( mRoundRadius, mHeight );
+    point9.setXY( mRoundRadius, mHeight);
     point10.setXY( 0, mRoundRadius );
     point11.setXY( mRoundRadius, 0 );
 
@@ -161,6 +175,17 @@ public class CustomButton extends Button implements View.OnTouchListener{
       this.rCPx = rCPx;
       this.rCPy = rCPy;
     }
+}
+
+  // offsetY is from 0 -> max -> 0
+  private void bounceTopBottomCurve(float offsetY){
+    Point point1 = mPoints.get( 1 );
+    point1.setXY( point1.x, point1.y - offsetY);
+
+    Point point7 = mPoints.get( 7 );
+    point7.setXY( point7.x, point7.y + offsetY);
+    postInvalidate();
+
   }
 
   private void updateRoundCurve(boolean left, float factor){
@@ -181,39 +206,151 @@ public class CustomButton extends Button implements View.OnTouchListener{
     Point point0 = mPoints.get( 0 );
     point0.setXY( pressedX - RADIUS, point0.y );
     Point point1 = mPoints.get( 1 );
-    point1.setXY( pressedX, point1.y + RADIUS * TOP_BOTTOM_CURVE_DEPTH_FACTOR );
+    point1.setXY( pressedX, point1.y + TOP_BOTTOM_CURCE_DEPTH );
     Point point2 = mPoints.get( 2 );
     point2.setXY( pressedX + RADIUS, point2.y );
 
     Point point6 = mPoints.get( 6 );
     point6.setXY( pressedX + RADIUS, point6.y );
     Point point7 = mPoints.get( 7 );
-    point7.setXY( pressedX, point6.y - RADIUS * TOP_BOTTOM_CURVE_DEPTH_FACTOR );
+    point7.setXY( pressedX, point6.y - TOP_BOTTOM_CURCE_DEPTH );
     Point point8 = mPoints.get( 8 );
-    point8.setXY( pressedX - RADIUS, point6.y );
+    point8.setXY( pressedX - RADIUS, point8.y );
+  }
+
+  private void updateTopBottomCurveCP(boolean left, float factor){
+    if(left){
+      Point point0 = mPoints.get( 0 );
+      point0.setCP( point0.lCPx * factor, point0.lCPy * factor, point0.rCPx * factor, point0.rCPy * factor );
+      Point point1 = mPoints.get( 1 );
+      point1.setCP( point1.lCPx * factor, point1.lCPy * factor, point1.rCPx * factor, point1.rCPy * factor );
+
+      Point point8 = mPoints.get( 8 );
+      point8.setCP( point8.lCPx * factor, point8.lCPy * factor, point8.rCPx * factor, point8.rCPy * factor );
+      Point point9 = mPoints.get( 7 );
+      point9.setCP( point9.lCPx * factor, point9.lCPy * factor, point9.rCPx * factor, point9.rCPy * factor );
+
+    } else {
+      Point point2 = mPoints.get( 2 );
+      point2.setCP( point2.lCPx * factor, point2.lCPy * factor, point2.rCPx * factor, point2.rCPy * factor );
+      Point point1 = mPoints.get( 1 );
+      point1.setCP( point1.lCPx * factor, point1.lCPy * factor, point1.rCPx * factor, point1.rCPy * factor );
+
+      Point point6 = mPoints.get( 6 );
+      point6.setCP( point6.lCPx * factor, point6.lCPy * factor, point6.rCPx * factor, point6.rCPy * factor );
+      Point point7 = mPoints.get( 7 );
+      point7.setCP( point7.lCPx * factor, point7.lCPy * factor, point7.rCPx * factor, point7.rCPy * factor );
+    }
+  }
+
+
+  private void updateCorner(boolean left, float pressedX){
+    int RADIS_TEMP = RADIUS;
+    // any way, update the top bottom curve points
+    if(pressedX < mRoundRadius){
+      updateTopBottomCurve( mRoundRadius);
+    } else if(pressedX > mWidth - mRoundRadius){
+      updateTopBottomCurve( mWidth - mRoundRadius );
+    } else {
+      updateTopBottomCurve( pressedX );
+    }
+
+    float downGradeFactor = 0.5f;
+
+    if(left){
+      float offsetY = (1 - (pressedX - mRoundRadius) / RADIS_TEMP ) * TOP_BOTTOM_CURCE_DEPTH * 1 / downGradeFactor;
+      if(offsetY > RADIS_TEMP * TOP_BOTTOM_CURVE_DEPTH_FACTOR){
+        offsetY = RADIS_TEMP * TOP_BOTTOM_CURVE_DEPTH_FACTOR;
+        int roundCornerDownGradeWidth = ( int ) (mRoundRadius + RADIS_TEMP - RADIS_TEMP * downGradeFactor);
+        float factor = 1 - (1 - ROUND_CURVE_FACTOR_MAX) * (roundCornerDownGradeWidth - pressedX) / roundCornerDownGradeWidth;
+        updateRoundCurve( true, factor );
+        updateTopBottomCurveCP( true, factor / 20);
+      }
+      Point point0 = mPoints.get(0);
+      point0.setXY( mRoundRadius , point0.y + offsetY);
+
+      Point point8 = mPoints.get( 8 );
+      point8.setXY( mRoundRadius, point8. y - offsetY );
+
+      Point point11 = mPoints.get( 11 );
+      point11.setXY( point0.x, point0.y );
+
+      Point point9 = mPoints.get( 9 );
+      point9.setXY( point8.x, point8.y );
+
+    } else {
+      float offsetY = (1 - (mWidth - pressedX - mRoundRadius) / RADIUS ) * TOP_BOTTOM_CURCE_DEPTH * 1 / downGradeFactor;
+      if(offsetY > TOP_BOTTOM_CURCE_DEPTH){
+        offsetY = TOP_BOTTOM_CURCE_DEPTH;
+        int roundCornerDownGradeWidth = ( int ) (mRoundRadius + RADIUS - RADIUS * downGradeFactor);
+        float factor = 1 - (1 - ROUND_CURVE_FACTOR_MAX) * (roundCornerDownGradeWidth - (mWidth - pressedX)) / roundCornerDownGradeWidth;
+        updateRoundCurve( false, factor );
+        updateTopBottomCurveCP( false, factor / 20);
+      }
+
+      Point point2 = mPoints.get(2);
+      point2.setXY( mWidth - mRoundRadius , point2.y + offsetY);
+
+      Point point6 = mPoints.get( 6 );
+      point6.setXY( mWidth - mRoundRadius, point6. y - offsetY );
+
+      Point point3 = mPoints.get( 3 );
+      point3.setXY( point2.x, point2.y );
+
+      Point point5 = mPoints.get( 5 );
+      point5.setXY( point6.x, point6.y );
+
+    }
   }
 
   private void updateButton(float pressedX){
-    if(pressedX <= mRoundRadius){
-      // update round curve in the left
-      float factor = 1 - ( float ) ((1 - ROUND_CURVE_FACTOR_MAX) * (mRoundRadius - pressedX) / mRoundRadius);
-      updateRoundCurve( true, factor );
-    } else if(pressedX >= mWidth - mRoundRadius ){
-      // update round curve in the right
-      float factor  = ( float ) (1 - ((1 - ROUND_CURVE_FACTOR_MAX)  * (mRoundRadius + pressedX - mWidth )/ mRoundRadius));
-      updateRoundCurve( false, factor );
-    } else if(pressedX >= mRoundRadius + RADIUS && pressedX <= mWidth - (mRoundRadius + RADIUS)){
+    if(pressedX >= mRoundRadius + RADIUS && pressedX <= mWidth - (mRoundRadius + RADIUS)){
       // update top bottom curve
       updateTopBottomCurve( pressedX );
-    } else if(pressedX > mRoundRadius && pressedX < mRoundRadius + RADIUS){
+    } else if(pressedX > 0 && pressedX < mRoundRadius + RADIUS){
       // update left round curve and top bottom curve
+      updateCorner(true, pressedX);
 
-    } else if(pressedX < mWidth - mRoundRadius && pressedX > mWidth - (mRoundRadius + RADIUS)){
+    } else if(pressedX < mWidth && pressedX > mWidth - (mRoundRadius + RADIUS)){
       // update right round curve and top bottom curve
-
+      updateCorner(false, pressedX);
     }
 
     invalidate();
+  }
+
+  private void bounce(){
+    if(mTimer != null){
+      mTimer.cancel();
+    }
+
+    float topBottomBounceOffset = TOP_BOTTOM_CURCE_DEPTH * 2;
+    final int period = 10;
+    final int segTime = 200;
+    final int hitTop = 5;
+    final float interval = topBottomBounceOffset / (segTime / period);
+    mTimer = new Timer(  );
+    mTimer.scheduleAtFixedRate( new TimerTask() {
+      int time = 0;
+      int plus = 1;
+      int hit = 1;
+      @Override
+      public void run() {
+        if(hit == hitTop && time == segTime / 2){
+          mTimer.cancel();
+        }
+        time += period;
+
+        bounceTopBottomCurve( interval * plus);
+
+        if(time == segTime){
+          hit ++;
+          time = 0;
+          plus *= -1;
+        }
+
+      }
+    }, 0, period );
   }
 
   @Override
@@ -255,7 +392,8 @@ public class CustomButton extends Button implements View.OnTouchListener{
         break;
       case MotionEvent.ACTION_CANCEL:
       case MotionEvent.ACTION_UP:
-
+        resetPoints();
+        invalidate();
         break;
 
     }
