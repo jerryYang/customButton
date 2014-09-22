@@ -3,8 +3,10 @@ package com.example.jerry.myapplication.views;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,6 +38,12 @@ public class CustomButton extends Button implements View.OnTouchListener{
 
   private Paint mPaint;
 
+  private String normalColorStr = "#000000";
+  private String startColorStr = "#c56fd5";
+  private String endColorStr = "#cc14ae";
+
+  private boolean mBounce = false;
+
   public CustomButton( Context context ) {
     super( context );
     init();
@@ -45,10 +53,15 @@ public class CustomButton extends Button implements View.OnTouchListener{
     super( context, attrs );
     init();
   }
-    public CustomButton( Context context, AttributeSet attrs, int defStyleAttr ) {
-      super( context, attrs, defStyleAttr );
-      init();
-    }
+
+  public CustomButton( Context context, AttributeSet attrs, int defStyleAttr ) {
+    super( context, attrs, defStyleAttr );
+    init();
+  }
+
+  public void enableBounce(boolean bounce){
+    mBounce = bounce;
+  }
 
   public void setSize(int width, int height ){
     this.mWidth = width;
@@ -62,8 +75,9 @@ public class CustomButton extends Button implements View.OnTouchListener{
 
     mPaint = new Paint(  );
     mPaint.setStyle( Paint.Style.FILL );
-    mPaint.setColor( Color.GRAY );
     mPaint.setAntiAlias( true );
+
+    resetPainterShader();
 
     mPoints = new ArrayList<Point>();
     mRoundRadius = mHeight / 2;
@@ -77,12 +91,34 @@ public class CustomButton extends Button implements View.OnTouchListener{
     resetPoints();
   }
 
+  private void resetPainterShader(){
+    updatePainterShader( normalColorStr, normalColorStr, 0 );
+  }
+
+  private void updatePainterShader( String startColorStr, String endColorStr, float pressedX ){
+    if(mPaint == null){
+      // painer should not be null
+      return;
+    }
+
+    Shader shader = getShader( startColorStr, endColorStr, pressedX );
+    mPaint.setShader( shader );
+  }
+
+  private Shader getShader(String startColorStr, String endColorStr, float pressedX){
+    Shader shader = new LinearGradient(-mWidth + pressedX, 0, pressedX, 0, Color.parseColor( startColorStr ), Color.parseColor( endColorStr ), Shader.TileMode.MIRROR );
+
+    return  shader;
+  }
+
   private void setRadius(){
     if(mWidth - mHeight > mRoundRadius * 1.5 * 2 ){
       RADIUS = ( int ) (mRoundRadius * 1.5);
     } else {
       RADIUS = (mWidth - mHeight) / 2;
     }
+
+    RADIUS = (mWidth - mHeight) / 2;
   }
 
   private void resetPoints(){
@@ -136,6 +172,39 @@ public class CustomButton extends Button implements View.OnTouchListener{
     point11.setXY( mRoundRadius, 0 );
   }
 
+  private void resetCP(){
+    Point point0 = mPoints.get( 0 );
+    point0.setCP( -1, 0, 1, 0 );
+    Point point1 = mPoints.get( 1 );
+    point1.setCP( -1, 0, 1, 0 );
+    Point point2 = mPoints.get( 2 );
+    point2.setCP( -1, 0, 1, 0 );
+
+    // right round curve
+    Point point3 = mPoints.get( 3 );
+    point3.setCP( -1, 0, 1, 0 );
+    Point point4 = mPoints.get( 4 );
+    point4.setCP( 0, -1, 0, 1 );
+    Point point5 = mPoints.get( 5 );
+    point5.setCP( 1, 0, -1, 0 );
+
+    // botton touch point curve
+    Point point6 = mPoints.get( 6 );
+    point6.setCP( 1, 0, -1, 0 );
+    Point point7 = mPoints.get( 7 );
+    point7.setCP( 1, 0, -1, 0 );
+    Point point8 = mPoints.get( 8 );
+    point8.setCP( 1, 0, -1, 0 );
+
+    // left round curve
+    Point point9 = mPoints.get( 9 );
+    point9.setCP( 1, 0, -1, 0 );
+    Point point10 = mPoints.get( 10 );
+    point10.setCP( 0, 1, 0, -1 );
+    Point point11 = mPoints.get( 11 );
+    point11.setCP( -1, 0, 1, 0 );
+  }
+
   private class Point{
     public float x;
     public float y;
@@ -177,17 +246,6 @@ public class CustomButton extends Button implements View.OnTouchListener{
       this.rCPx = rCPx;
       this.rCPy = rCPy;
     }
-}
-
-  // offsetY is from 0 -> max -> 0
-  private void bounceTopBottomCurve(float offsetY){
-    Point point1 = mPoints.get( 1 );
-    point1.setXY( point1.x, point1.y - offsetY);
-
-    Point point7 = mPoints.get( 7 );
-    point7.setXY( point7.x, point7.y + offsetY);
-    postInvalidate();
-
   }
 
   private void updateRoundCurve(boolean left, float factorY, float factor){
@@ -364,34 +422,74 @@ public class CustomButton extends Button implements View.OnTouchListener{
     invalidate();
   }
 
+  // offsetY is from 0 -> max -> 0
+  private void bounceTopBottomCurve(float offsetLeft, float offsetMiddle, float offsetRight){
+    Point point0 = mPoints.get( 0 );
+    point0.setXY( point0.x, point0.y - offsetLeft);
+
+    Point point8 = mPoints.get( 8 );
+    point8.setXY( point8.x, point8.y + offsetLeft);
+
+    Point point1 = mPoints.get( 1 );
+    point1.setXY( point1.x, point1.y - offsetMiddle);
+
+    Point point7 = mPoints.get( 7 );
+    point7.setXY( point7.x, point7.y + offsetMiddle);
+
+    Point point2 = mPoints.get( 2 );
+    point2.setXY( point2.x, point2.y - offsetRight);
+
+    Point point6 = mPoints.get( 6 );
+    point6.setXY( point6.x, point6.y + offsetRight);
+
+    Point point11 = mPoints.get( 11 );
+    point11.setXY( point11.x, point11.y - offsetLeft);
+
+    Point point9 = mPoints.get( 9 );
+    point9.setXY( point9.x, point9.y + offsetLeft);
+
+    Point point3 = mPoints.get( 3 );
+    point3.setXY( point3.x, point3.y - offsetRight);
+
+    Point point5 = mPoints.get( 5 );
+    point5.setXY( point5.x, point5.y + offsetRight);
+
+    postInvalidate();
+  }
+
   private void bounce(){
     if(mTimer != null){
       mTimer.cancel();
     }
 
-    float topBottomBounceOffset = TOP_BOTTOM_CURCE_DEPTH * 2;
     final int period = 10;
-    final int segTime = 200;
-    final int hitTop = 5;
-    final float interval = topBottomBounceOffset / (segTime / period);
+    final int segTime = 150;
+    final int hitTop = 3;
     mTimer = new Timer(  );
     mTimer.scheduleAtFixedRate( new TimerTask() {
       int time = 0;
       int plus = 1;
-      int hit = 1;
+      int hit = 0;
+      float intervalMiddel = mPoints.get( 1 ).y * 2 / (segTime / period);
+      float intervalLeft = mPoints.get( 0 ).y * 2/ (segTime / period);
+      float intervalRight = mPoints.get( 2 ).y * 2/ (segTime / period);
       @Override
       public void run() {
-        if(hit == hitTop && time == segTime / 2){
+        if(hit == hitTop && (time <= segTime / 2 + period) && (time >= segTime  /2 - period)){
           mTimer.cancel();
+          resetPoints();
+          resetPainterShader();
+          postInvalidate();
         }
         time += period;
 
-        bounceTopBottomCurve( interval * plus);
+        bounceTopBottomCurve( intervalLeft * plus, intervalMiddel * plus, intervalRight * plus);
 
         if(time == segTime){
           hit ++;
           time = 0;
           plus *= -1;
+          intervalMiddel *= 0.8;
         }
 
       }
@@ -413,6 +511,9 @@ public class CustomButton extends Button implements View.OnTouchListener{
         first = false;
       } else {
         Point prePoint = mPoints.get( i - 1 );
+        if(prePoint.x == point.x && prePoint.y == point.y){
+          continue;
+        }
         path.cubicTo( prePoint.x + prePoint.rCPx * horizontalControlPointWidth, prePoint.y + prePoint.rCPy *  verticalControlPointHeight,
                 point.x + point.lCPx * horizontalControlPointWidth, point.y +point.lCPy * verticalControlPointHeight,
                 point.x, point.y);
@@ -433,12 +534,19 @@ public class CustomButton extends Button implements View.OnTouchListener{
       case MotionEvent.ACTION_MOVE:
         resetPoints();
         float x = motionEvent.getX();
+        updatePainterShader( startColorStr, endColorStr, x );
         updateButton( x );
         break;
       case MotionEvent.ACTION_CANCEL:
       case MotionEvent.ACTION_UP:
-        resetPoints();
-        invalidate();
+        if(mBounce){
+          resetCP();
+          bounce();
+        } else {
+          resetPainterShader();
+          resetPoints();
+          invalidate();
+        }
         break;
 
     }
